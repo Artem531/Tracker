@@ -25,7 +25,6 @@ import sys
 orig_stdout = sys.stdout
 f = open('out.txt', 'w')
 
-
 file_path = '/home/qwe/Downloads/osnet_x0_25_market_256x128_amsgrad_ep180_stp80_lr0.003_b128_fb10_softmax_labelsmooth_flip.pth'
 
 num_classes = 6
@@ -43,10 +42,21 @@ reid_network = model
 
 @torch.no_grad()
 def extract_features(input):
+    """
+    Extract features function
+    :param input: image of type numpy array
+    :return: vector of features
+    """
     model.eval()
     return model(input)
 
 def bb_intersection_over_union(boxA, boxB):
+    """
+
+    :param boxA: box of first person [x1,y1,x2,y2]
+    :param boxB: box of second person [x1,y1,x2,y2]
+    :return: intersection over union value
+    """
     # determine the (x, y)-coordinates of the intersection rectangle
     xA = max(boxA[0], boxB[0])
     yA = max(boxA[1], boxB[1])
@@ -69,24 +79,23 @@ def bb_intersection_over_union(boxA, boxB):
     # return the intersection over union value
     return iou
 
-def get_disparity(x, x1, B, f, h, w):
-    """
-
-    :param x: x from first image
-    :param x1: x from second image
-    :param B: distance between cameras
-    :param f: focal distance
-
-    :return: Z - distance to the point
-    """
-    Z = (B * f / abs(x + x1))
-    return Z
 
 def get_middle(p):
-    return  p[1] + (p[3] - p[1]) / 2, p[0] + (p[2] - p[0]) / 2
+    """
+    get middle point of bb
+    :param p: bbox array [x1,y1,x2,y2]
+    :return: x, y point
+    """
+    return p[0] + (p[2] - p[0]) / 2, p[1] + (p[3] - p[1]) / 2
 
 
 def return_orig_point_size(p, im):
+    """
+    rescale coordinates for new image shape
+    :param p: bbox array [y1,x1,y2,x2]
+    :param im:
+    :return: bbox array [y1,x1,y2,x2] for new image
+    """
     startX = p[1]
     startY = p[0]
     endX = p[3]
@@ -105,47 +114,40 @@ def return_orig_point_size(p, im):
     endY = bbox[3]
     return startX, startY, endX, endY
 
-
-def grabTheNextFrame(W, H, vs):
-    # grab the next frame and handle if we are reading from either
-    # VideoCapture or VideoStream
-
-    frame = vs.read()
-    frame = frame[1]
-    frame_save = frame.copy()
-
-    # if we are viewing a video and we did not grab a frame then we
-    # have reached the end of the video
-
-    frame = imutils.resize(frame, width=W)
-    if W is None or H is None:
-        (H, W) = frame.shape[:2]
-    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    image = Image.fromarray(frame)
-
-    img_resized = np.array(image.resize(size=(H, W)), dtype=np.float32)
-    #img_resized = img_resized / 255.
-    return img_resized, image, frame_save, rgb, H, W
-
-
-
-def check_cords(p):
+def check_coords(p):
+    """
+    if coordinate have negative values clip them to zero
+    :param p: bbox array [y1,x1,y2,x2]
+    :return: bbox array [y1,x1,y2,x2]
+    """
     idx = 0
     for i in p:
         p[idx] = i if i > 0 else 0
-        #p1[idx] = j if j > 0 else 0
         idx += 1
 
     return p
 
 def crop_im(p, img_resized):
-    p = check_cords(p)
+    """
+    get image of person
+    :param p: bbox array [y1,x1,y2,x2]
+    :param img_resized: image where need to do a crop
+    :return: image of person
+    """
+    p = check_coords(p)
     imgs_query = img_resized[ int(p[0]):int(p[2]), int(p[1]):int(p[3])]
     return imgs_query
 
 
 def get_dist(p_arr, img_resized, gallary_features, body_bank_bb):
+    """
+    Get euclidean distance between features of persons
+    :param p_arr: detected bboxes of persons
+    :param img_resized: image where need to do a crop
+    :param gallary_features: gallary of features from previous frames
+    :param body_bank_bb:
+    :return:
+    """
     # get id
     imgs_query = []
 
@@ -267,7 +269,7 @@ with tf.Session() as sess:
                         print("add new user909090909090")
                         result = len(body_bank) + 1
                         p = detections[i]
-                        p = check_cords(p)
+                        p = check_coords(p)
                         # img = cv2.resize(frameL[int(p[1]):int(p[3]), int(p[0]):int(p[2])], (256, 128)).astype('f') / 255.
                         img = np.transpose(frameL[int(p[0]):int(p[2]), int(p[1]):int(p[3])]).astype('f') / 255.
                         img = np.expand_dims(img, axis=0)
@@ -302,7 +304,7 @@ with tf.Session() as sess:
                     print("add new user")
                     result = len(body_bank) + 1
                     p = detections[i]
-                    p = check_cords(p)
+                    p = check_coords(p)
 
                     img = np.transpose(frameL[int(p[0]):int(p[2]), int(p[1]):int(p[3])]).astype('f') / 255.
                     img = np.expand_dims(img, axis=0)
@@ -329,7 +331,7 @@ with tf.Session() as sess:
                     for idx, col in enumerate(row):
                         if idx == 0:
                             p = detections[i]
-                            p = check_cords(p)
+                            p = check_coords(p)
                             col.imshow(frameL[int(p[0]):int(p[2]), int(p[1]):int(p[3])])
                         if idx == 1:
                             col.plot(range(0, len(body_bank[id]) + 1), list(body_bank[id]) + [0.40])
@@ -340,7 +342,7 @@ with tf.Session() as sess:
 
                 if result < 0.3:
                     p = detections[i]
-                    p = check_cords(p)
+                    p = check_coords(p)
                     body_bank_dist[id] = result# + body_bank_dist[id]) / 2
                     print("query_f == detections ", len(query_f), len(detections))
                     body_bank[id] = result_features[i] #+ body_bank[id]) / 2  #frameL[int(p[1]):int(p[3]), int(p[0]):int(p[2])]
