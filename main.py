@@ -4,8 +4,6 @@ height = 480
 
 pipe = rs.pipeline()
 config = rs.config()
-#config.enable_stream(rs.stream.depth, width, height, rs.format.z16, 15)
-#config.enable_stream(rs.stream.color, width, height, rs.format.bgr8, 1)
 
 # Start streaming
 profile = pipe.start()
@@ -27,11 +25,6 @@ import sys
 orig_stdout = sys.stdout
 f = open('out.txt', 'w')
 
-
-
-#file_path = "/home/artem/Downloads/osnet_x0_25_msmt17_combineall_256x128_amsgrad_ep150_stp60_lr0.0015_b64_fb10_softmax_labelsmooth_flip_jitter.pth"
-#file_path = "/home/artem/Downloads/deep-person-reid-master/projects/OSNet_AIN/log/model.pth.tar-5"
-#file_path = 'model.pth.tar-10'
 
 file_path = '/home/qwe/Downloads/osnet_x0_25_market_256x128_amsgrad_ep180_stp80_lr0.003_b128_fb10_softmax_labelsmooth_flip.pth'
 
@@ -120,7 +113,7 @@ def grabTheNextFrame(W, H, vs):
     frame = vs.read()
     frame = frame[1]
     frame_save = frame.copy()
-    # print(np.shape(frame))
+
     # if we are viewing a video and we did not grab a frame then we
     # have reached the end of the video
 
@@ -158,7 +151,7 @@ def get_dist(p_arr, img_resized, gallary_features, body_bank_bb):
 
     i = 0
     for p in p_arr:
-        #print(p, p1)
+
         img_query = crop_im(p, img_resized)
         imgs_query.append(img_query)
         i += 1
@@ -190,24 +183,11 @@ def get_dist(p_arr, img_resized, gallary_features, body_bank_bb):
     return distmat_arr, query_f
 
 
-#vs = cv2.VideoCapture("/home/qwe/Downloads/wall_left_0_20191009134800.avi")
-#vs = cv2.VideoCapture("/home/artem/Depth_Map_from_Stereo_Images/4_MP_left.avi")
-#vs1 = cv2.VideoCapture("/home/artem/Depth_Map_from_Stereo_Images/4_MP_left.avi")
-#vs = cv2.VideoCapture("/home/artem/Depth_Map_from_Stereo_Images/4_MP_right.avi")
-
-
 
 curTime = 0
 img = np.zeros((10, 5))
 W, H = 416, 416
-# input_tensor, output_tensors = utils.read_pb_return_tensors(tf.get_default_graph(),
-#                                                             "./checkpoint/yolov3_cpu_nms.pb",
-#                                                             ["Placeholder:0", "concat_9:0", "mul_6:0"])
-# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-#
-# input_tensor, output_tensors = utils.read_pb_return_tensors(tf.get_default_graph(),
-#                                                             "./checkpoint/yolov3_cpu_nms.pb",
-#                                                             ["Placeholder:0", "concat_9:0", "mul_6:0"])
+
 
 model_path = './model/frozen_inference_graph.pb'
 odapi = DetectorAPI(path_to_ckpt=model_path)
@@ -253,30 +233,8 @@ with tf.Session() as sess:
 
         if frameL is None:
             break
-        #
-        # IMAGE_H, IMAGE_W = 416, 416
-        # H, W = None, IMAGE_W
-        #
-        # scale_x = frameL.shape[0] / IMAGE_W
-        # scale_y = frameL.shape[1] / IMAGE_H
-        # print("scale", scale_x, scale_y)
-        # classes = utils.read_coco_names('./data/coco.names')
-        # num_classes = len(classes)
-        # shape = np.shape(frameL)
-        #
-        # image = Image.fromarray(frameL)
-        # #image1 = Image.fromarray(frameR)
-        #
-        # img_resized = np.array(image.resize(size=(IMAGE_H, IMAGE_W)), dtype=np.float32)
-        # #img_resized = img_resized / 255.
-        #
-        # shape = np.shape(img_resized)
 
         detections, scores, classes, num = odapi.processFrame(frameL)
-        #print("detections", classes)
-        # detections, scores = sess.run(output_tensors, feed_dict={input_tensor: np.expand_dims(img_resized / 255, axis=0)})
-        # detections, scores, labels = utils.cpu_nms(detections, scores, num_classes, score_thresh=0.8, iou_thresh=0.8)
-        # detections = np.array([np.array([int(i[0] * scale_y), int(i[1] * scale_x), int(i[2] * scale_y), int(i[3] * scale_x)]) for i in detections])
 
         mask = np.array([a & b for a, b in zip(np.array(classes) == 1, np.array(scores) > threshold )])
         detections = np.array(detections)
@@ -293,17 +251,14 @@ with tf.Session() as sess:
             #    continue
 
             # init body_bank
-            #if len(body_bank) == 0:
-            #    for p in detections:
-            #        body_bank.append(img_resized[int(p[1]):int(p[3]), int(p[0]):int(p[2])])
-            #print("detections",detections)
+
             result_arr = []
             result_features = []
             result_dist_arr = []
             body_bank_tmp = body_bank.copy()
             body_bank_bb_tmp = body_bank_bb.copy()
             len_body_bank_tmp = len(body_bank_tmp)
-            #frameL = cv2.cvtColor(frameL, cv2.COLOR_BGR2RGB)
+
             for i, body_detection_xy in enumerate(detections):
                 if len(body_bank) != 0:
                     print(len(body_bank))
@@ -320,8 +275,7 @@ with tf.Session() as sess:
                         features_img_query = F.normalize(extract_features(torch.from_numpy(img).cuda())).cpu().numpy()[0]
                         body_bank.append(features_img_query)
                         body_bank_bb.append(detections[i])
-                        #body_bank_tmp.append(features_img_query)
-                        #body_bank_bb_tmp.append(detections[i])
+
                         body_bank_dist.append(0)
                         continue
 
@@ -337,27 +291,25 @@ with tf.Session() as sess:
                         result_features.append(query_f[result])
                         result_dist_arr.append(np.min(distmat_arr, 1)[0])
                         # choose one and remove him
-                        #body_bank_tmp.pop(result)
+
                     else :
                         print("add new user")
                         body_bank.append(query_f[result])
                         body_bank_bb.append(detections[i])
                         body_bank_dist.append(0)
-                        #body_bank.append(frameL[int(p[1]):int(p[3]), int(p[0]):int(p[2])])
+
                 else:
                     print("add new user")
                     result = len(body_bank) + 1
                     p = detections[i]
                     p = check_cords(p)
-                    #img = cv2.resize(frameL[int(p[1]):int(p[3]), int(p[0]):int(p[2])], (256, 128)).astype('f') / 255.
+
                     img = np.transpose(frameL[int(p[0]):int(p[2]), int(p[1]):int(p[3])]).astype('f') / 255.
                     img = np.expand_dims(img, axis=0)
                     print(np.shape(img))
                     features_img_query = F.normalize(extract_features(torch.from_numpy(img).cuda())).cpu().numpy()[0]
                     body_bank.append(features_img_query)
                     body_bank_bb.append(detections[i])
-                    #body_bank_tmp.append(features_img_query)
-                    #body_bank_bb_tmp.append(detections[i])
                     body_bank_dist.append(0)
 
             if len(body_bank) != 0:
