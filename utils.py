@@ -12,7 +12,7 @@ cfg = get_default_config()
 model = torchreid.models.build_model(
     name=cfg.model.name,
     num_classes=cfg.model.num_classes,
-    loss= cfg.model.loss ,
+    loss=cfg.model.loss,
     pretrained=cfg.model.pretrained
 )
 
@@ -29,6 +29,7 @@ def extract_features(input):
     """
     model.eval()
     return model(input)
+
 
 def bb_intersection_over_union(boxA, boxB):
     """
@@ -94,6 +95,7 @@ def return_orig_point_size(p, im):
     endY = bbox[3]
     return startX, startY, endX, endY
 
+
 def check_coords(p):
     """
     if coordinate have negative values clip them to zero
@@ -107,6 +109,7 @@ def check_coords(p):
 
     return p
 
+
 def crop_im(p, img_resized):
     """
     get image of person
@@ -115,7 +118,7 @@ def crop_im(p, img_resized):
     :return: image of person
     """
     p = check_coords(p)
-    imgs_query = img_resized[ int(p[0]):int(p[2]), int(p[1]):int(p[3])]
+    imgs_query = img_resized[int(p[0]):int(p[2]), int(p[1]):int(p[3])]
     return imgs_query
 
 
@@ -133,7 +136,6 @@ def get_dist(p_arr, img_resized, gallary_features):
 
     i = 0
     for p in p_arr:
-
         img_query = crop_im(p, img_resized)
         imgs_query.append(img_query)
         i += 1
@@ -154,12 +156,44 @@ def get_dist(p_arr, img_resized, gallary_features):
             img = np.transpose(img_query).astype('f') / 255.
             img = np.expand_dims(img, axis=0)
             print(np.shape(img))
-            features_img_query =  F.normalize(extract_features(torch.from_numpy(img).cuda()), p=2, dim=1).cpu().numpy()[0]
+            features_img_query = F.normalize(extract_features(torch.from_numpy(img).cuda()), p=2, dim=1).cpu().numpy()[
+                0]
             query_f.append(features_img_query)
 
             distmat = np.sum((features_img_query[:] - features_img_gallery[:]) ** 2)
-            distmat_arr[i, j] = distmat #/ bb_intersection_over_union(p_arr[i], body_bank_bb[j])
+            distmat_arr[i, j] = distmat  # / bb_intersection_over_union(p_arr[i], body_bank_bb[j])
 
     print("dist", distmat_arr)
 
     return distmat_arr, query_f
+
+
+def iou(box1, box2):
+    """
+    calculate intersection over union
+    """
+    xa = max(box1[1], box2[1])
+    ya = max(box1[0], box2[0])
+    xb = min(box1[3], box2[3])
+    yb = min(box1[2], box2[2])
+
+    interArea = max(0, xb - xa) * max(0, yb - ya)
+
+    box1Area = (box1[2] - box1[0]) * (box1[3] - box1[1])
+    box2Area = (box2[2] - box2[0]) * (box2[3] - box2[1])
+
+    # compute the intersection over union by taking the intersection
+    # area and dividing it by the sum of prediction + ground-truth
+    # areas - the interesection area
+    iou_value = float(interArea) / float(box1Area + box2Area - interArea)
+
+    # return the intersection over union value
+    return iou_value
+
+
+def make_rgb(img):
+    """
+    intel img format to rgb format
+    """
+    img[:,:, [0, 2]] = img[:,:, [2, 0]]
+    return img

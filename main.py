@@ -1,6 +1,6 @@
 import pyrealsense2 as rs
 
-from utils import check_coords, extract_features, get_dist, iou
+from utils import check_coords, extract_features, get_dist, iou, make_rgb
 import tensorflow as tf
 import cv2
 import torch
@@ -59,7 +59,10 @@ def main():
             frameset = pipe.wait_for_frames()
             color_frame = frameset.get_color_frame()
             color = np.asanyarray(color_frame.get_data())
-            frameL = color
+            print(np.shape(color), type(color))
+            rgb_frame = make_rgb(color)
+
+            frameL = rgb_frame
             frameL = cv2.resize(frameL, (cfg.image.width, cfg.image.height))
 
             # -----------------------------------------
@@ -266,6 +269,7 @@ def main():
             frameL = frameL / 255
             for p in detections:
                 cv2.rectangle(frameL, (p[1], p[0]), (p[3], p[2]), (50, 50, 250), 2)
+
 
             cv2.imshow("L", frameL)
             print("shape ", frameL.shape)
