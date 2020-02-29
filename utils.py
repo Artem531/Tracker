@@ -5,18 +5,18 @@ import torch
 import torchreid
 from torch.nn import functional as F
 import numpy as np
+from default_config import get_default_config
 
-file_path = '/home/artem/Downloads/osnet_x0_25_market_256x128_amsgrad_ep180_stp80_lr0.003_b128_fb10_softmax_labelsmooth_flip.pth'
+cfg = get_default_config()
 
-num_classes = 6
 model = torchreid.models.build_model(
-    name='osnet_x0_25',
-    num_classes=num_classes,
-    loss='softmax',
-    pretrained=True
+    name=cfg.model.name,
+    num_classes=cfg.model.num_classes,
+    loss= cfg.model.loss ,
+    pretrained=cfg.model.pretrained
 )
 
-torchreid.utils.load_pretrained_weights(model, file_path)
+torchreid.utils.load_pretrained_weights(model, cfg.model.load_weights)
 model = nn.DataParallel(model).cuda()
 
 
