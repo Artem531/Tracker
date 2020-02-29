@@ -1,6 +1,6 @@
 import pyrealsense2 as rs
 
-from utils import check_coords, extract_features, get_dist
+from utils import check_coords, extract_features, get_dist, iou
 import tensorflow as tf
 import cv2
 import torch
@@ -83,11 +83,35 @@ def main():
             # get bbox of persons
             mask = np.array([a & b for a, b in zip(np.array(classes) == 1, np.array(scores) > cfg.detector.threshold )])
             detections = np.array(detections)
-
             if np.sum(mask) != 0:
                 detections = detections[mask]
             else:
                 detections = []
+
+            # apply ion filter
+            detections_iou = []
+            for slow_loop_idx in range(len(detections)):
+
+                if detections[slow_loop_idx][0] == -1:
+                    continue
+
+                for fast_loop_idx in range(len(detections)):
+                    if detections[fast_loop_idx][0] == -1:
+                        continue
+
+                    r = iou(detections[slow_loop_idx], detections[fast_loop_idx])
+
+                    if (r < cfg.detector.iou_threshold and slow_loop_idx != fast_loop_idx):
+                        detections[fast_loop_idx][0] = -1
+
+            for box in detections:
+                if box[0] == -1:
+                    continue
+                detections_iou.append(box)
+
+            # save detections after filter
+            detections = detections_iou
+
             print("detections", detections)
 
             # -----------------------------------------
