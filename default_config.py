@@ -12,7 +12,7 @@ def get_default_config():
     cfg.model.num_classes = 6
     cfg.model.loss = 'softmax'
     cfg.model.pretrained = True
-
+    cfg.model.threshold = 0.1
     # detector
     cfg.detector = CN()
     cfg.detector.load_weights = './model/frozen_inference_graph.pb'
@@ -26,7 +26,7 @@ def get_default_config():
 
     # video
     cfg.video = CN()
-    cfg.video.path = 'recording.avi'
+    cfg.video.path = 'results/recording.avi'
 
     # optimizer
     cfg.visualisation = CN()

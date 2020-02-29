@@ -58,8 +58,8 @@ def main():
             # pipe to get image from intel cam
             frameset = pipe.wait_for_frames()
             color_frame = frameset.get_color_frame()
-            color = np.asanyarray(color_frame.get_data())
-            print(np.shape(color), type(color))
+            color = np.asanyarray(color_frame.get_data()).copy()
+            #print(np.shape(color), type(color))
             rgb_frame = make_rgb(color)
 
             frameL = rgb_frame
@@ -173,7 +173,7 @@ def main():
                         # if (distmat_arr[0][result] < body_bank_dist[result] + 100):
 
                         # if minimum distance is lower 0.3 it is the same person
-                        if (distmat_arr[0][result] < 0.3):
+                        if (distmat_arr[0][result] < cfg.model.threshold):
                             # add id to result array
                             result_arr.append(result)
 
@@ -245,8 +245,8 @@ def main():
                                     #print(str(int("".join(str(int(x)) for x in [ x > 0.15 and y > 0.15 for x, y in zip(body_bank[id],result_features[i])]), 2)) + '\n', file=f)
                                     #col.plot(int("".join(str(int(x)) for x in [ x > 0.1 and y > 0.1 for x, y in zip(body_bank[id],result_features[i])]), 2))
 
-                    # refresh image in gallary if image is good
-                    if result < 0.3:
+                    # refresh image in gallery if image is good
+                    if result < cfg.model.threshold:
                         p = detections[i]
                         p = check_coords(p)
                         body_bank_dist[id] = result# + body_bank_dist[id]) / 2
@@ -269,7 +269,6 @@ def main():
             frameL = frameL / 255
             for p in detections:
                 cv2.rectangle(frameL, (p[1], p[0]), (p[3], p[2]), (50, 50, 250), 2)
-
 
             cv2.imshow("L", frameL)
             print("shape ", frameL.shape)
