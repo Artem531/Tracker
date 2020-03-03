@@ -14,6 +14,7 @@ import sys
 orig_stdout = sys.stdout
 #f = open('out.txt', 'w')
 
+
 def main():
     cfg = get_default_config()
 
@@ -103,8 +104,7 @@ def main():
                         continue
 
                     r = iou(detections[slow_loop_idx], detections[fast_loop_idx])
-
-                    if (r < cfg.detector.iou_threshold and slow_loop_idx != fast_loop_idx):
+                    if r > cfg.detector.iou_threshold and slow_loop_idx != fast_loop_idx:
                         detections[fast_loop_idx][0] = -1
 
             for box in detections:
