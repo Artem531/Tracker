@@ -128,25 +128,20 @@ def main():
                 result_features = [] # features of detected persons respectively to result_arr idxes
                 result_dist_arr = [] # distance of detected persons respectively to result_arr idxes
                 body_bank_tmp = body_bank.copy() # body bank copy for next loop to exclude person after search
-                #body_bank_bb_tmp = body_bank_bb.copy()
                 len_body_bank_tmp = len(body_bank_tmp) # decreasing length of body_bank_tmp
 
                 # search loop
                 for i, body_detection_xy in enumerate(detections):
                     # if body bank (gallary) is not empty
                     if len(body_bank) != 0:
-                        #print(len(body_bank))
 
                         # if tmp body bank (gallary) is empty but we still have detected persons
                         if len_body_bank_tmp == 0:
 
-                            #print("add new user909090909090")
 
                             # get coordinates of person
                             p = detections[i]
                             p = check_coords(p)
-
-                            # img = cv2.resize(frameL[int(p[1]):int(p[3]), int(p[0]):int(p[2])], (256, 128)).astype('f') / 255.
 
                             # do preparations for image to fit it into reid network
                             img = np.transpose(frameL[int(p[0]):int(p[2]), int(p[1]):int(p[3])]).astype('f') / 255.
@@ -156,13 +151,15 @@ def main():
                             # extract features
                             features_img_query = F.normalize(extract_features(torch.from_numpy(img).cuda())).cpu().numpy()[0]
                             # add features of new pearson to gallary
+
                             body_bank.append(features_img_query)
+                            result = len(body_bank)
+                            result_arr.append(result)
                             #body_bank_bb.append(detections[i])
                             # init distance of new person
                             body_bank_dist.append(0)
                             continue
 
-                        #distmat_arr, query_f = get_dist([np.array(body_detection_xy)], frameL, body_bank_tmp, body_bank_bb_tmp)
 
                         # get distance of person to persons in gallery
                         distmat_arr, query_f = get_dist([np.array(body_detection_xy)], frameL, body_bank_tmp)
@@ -170,16 +167,14 @@ def main():
                         # get id of person in gallery
                         result = np.argmin(distmat_arr, 1)[0]
                         print(distmat_arr[0][result])
-                        # if (distmat_arr[0][result] < body_bank_dist[result] + 100):
 
-                        # if minimum distance is lower 0.3 it is the same person
+                        # if minimum distance is lower cfg.model.threshold it is the same person
                         if (distmat_arr[0][result] < cfg.model.threshold):
                             # add id to result array
                             result_arr.append(result)
 
                             # exclude person from search
                             body_bank_tmp[result] = []
-                            #body_bank_bb_tmp[result] = []
 
                             # decrease lenght of tmp body bank
                             len_body_bank_tmp -= 1
@@ -188,10 +183,8 @@ def main():
                             result_features.append(query_f[result])
                             result_dist_arr.append(np.min(distmat_arr, 1)[0])
                         else:
-                            #print("add new user")
                             # save features and distance
                             body_bank.append(query_f[result])
-                            #body_bank_bb.append(detections[i])
                             body_bank_dist.append(0)
 
                     else:
@@ -205,13 +198,14 @@ def main():
                         # do preparations for image to fit it into reid network
                         img = np.transpose(frameL[int(p[0]):int(p[2]), int(p[1]):int(p[3])]).astype('f') / 255.
                         img = np.expand_dims(img, axis=0)
-                        #print(np.shape(img))
 
                         # extract features
                         features_img_query = F.normalize(extract_features(torch.from_numpy(img).cuda())).cpu().numpy()[0]
 
                         # save features and distance
                         body_bank.append(features_img_query)
+                        result = len(body_bank)
+                        result_arr.append(result)
                         #body_bank_bb.append(detections[i])
                         body_bank_dist.append(0)
 
@@ -229,8 +223,6 @@ def main():
                     # add new human if % is too low
 
                     # refresh bank
-                    # if result < body_bank_dist[id] + 500:
-                    #print("id!!!!!!!!!!!!!!!!!!!!!!!", id)
                     if cfg.visualisation.key:
                         if len(body_bank) != 0:
                             for idx, col in enumerate(row):
@@ -242,19 +234,14 @@ def main():
                                     col.plot(range(0, len(body_bank[id]) + 1), list(body_bank[id]) + [0.40])
                                 if idx == 2:
                                     print(int("".join(str(int(x)) for x in [ x > 0.1 and y > 0.1 for x, y in zip(body_bank[id],result_features[i])]), 2))
-                                    #print(str(int("".join(str(int(x)) for x in [ x > 0.15 and y > 0.15 for x, y in zip(body_bank[id],result_features[i])]), 2)) + '\n', file=f)
-                                    #col.plot(int("".join(str(int(x)) for x in [ x > 0.1 and y > 0.1 for x, y in zip(body_bank[id],result_features[i])]), 2))
 
                     # refresh image in gallery if image is good
                     if result < cfg.model.threshold:
                         p = detections[i]
                         p = check_coords(p)
                         body_bank_dist[id] = result# + body_bank_dist[id]) / 2
-                        #print("query_f == detections ", len(query_f), len(detections))
                         body_bank[id] = result_features[i] #+ body_bank[id]) / 2  #frameL[int(p[1]):int(p[3]), int(p[0]):int(p[2])]
-                        #body_bank_bb.append(detections[i])
 
-                    #print("ID", id)
 
                     text = "_ID_{} <{}>".format(str(id), str(round(result, 3)))
                     cv2.putText(frameL, text,
