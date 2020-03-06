@@ -27,8 +27,9 @@ def main():
     print('init intel camera...')
     pipe = rs.pipeline()
     config = rs.config()
+    config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
     # Start streaming
-    pipe.start()
+    pipe.start(config)
     print("done!")
 
     # init banks
@@ -52,7 +53,7 @@ def main():
 
         while True:
             curTime += 1
-            print(curTime)
+            #print(curTime)
 
             #-----------------------------------------
 
@@ -61,12 +62,10 @@ def main():
             color_frame = frameset.get_color_frame()
             color = np.asanyarray(color_frame.get_data()).copy()
             #print(np.shape(color), type(color))
-            rgb_frame = make_rgb(color)
+            # rgb_frame = make_rgb(color)
 
-            frameL = rgb_frame
-            frameL = cv2.resize(frameL, (cfg.image.width, cfg.image.height))
+            frameL = cv2.resize(color, (cfg.image.width, cfg.image.height))
 
-            # -----------------------------------------
 
             # -----------------------------------------
             # choose start frame point
@@ -115,8 +114,6 @@ def main():
             # save detections after filter
             detections = detections_iou
 
-            print("detections", detections)
-
             # -----------------------------------------
 
 
@@ -146,7 +143,6 @@ def main():
                             # do preparations for image to fit it into reid network
                             img = np.transpose(frameL[int(p[0]):int(p[2]), int(p[1]):int(p[3])]).astype('f') / 255.
                             img = np.expand_dims(img, axis=0)
-                            #print(np.shape(img))
 
                             # extract features
                             features_img_query = F.normalize(extract_features(torch.from_numpy(img).cuda())).cpu().numpy()[0]
@@ -166,7 +162,7 @@ def main():
 
                         # get id of person in gallery
                         result = np.argmin(distmat_arr, 1)[0]
-                        print(distmat_arr[0][result])
+                        #print(distmat_arr[0][result])
 
                         # if minimum distance is lower cfg.model.threshold it is the same person
                         if (distmat_arr[0][result] < cfg.model.threshold):
@@ -258,7 +254,7 @@ def main():
                 cv2.rectangle(frameL, (p[1], p[0]), (p[3], p[2]), (50, 50, 250), 2)
 
             cv2.imshow("L", frameL)
-            print("shape ", frameL.shape)
+            #print("shape ", frameL.shape)
 
             if args_save:
                 video_writer.write((frameL * 255).astype(np.uint8))

@@ -1,8 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import cv2
 import time
-import os
 
 # from run import main2
 from importlib import import_module

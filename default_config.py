@@ -17,12 +17,12 @@ def get_default_config():
     cfg.detector = CN()
     cfg.detector.load_weights = './model/frozen_inference_graph.pb'
     cfg.detector.threshold = 0.95
-    cfg.detector.iou_threshold = 0.99
+    cfg.detector.iou_threshold = 0.80
 
     # image
     cfg.image = CN()
     cfg.image.width = 1280
-    cfg.image.height = 780
+    cfg.image.height = 720
 
     # video
     cfg.video = CN()
