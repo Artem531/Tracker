@@ -1,6 +1,6 @@
 import pyrealsense2 as rs
 
-from utils import check_coords, extract_features, get_dist, iou, make_rgb
+from utils import check_coords, extract_features, get_dist, bb_intersection_over_union
 import tensorflow as tf
 import cv2
 import torch
@@ -102,7 +102,7 @@ def main():
                     if detections[fast_loop_idx][0] == -1:
                         continue
 
-                    r = iou(detections[slow_loop_idx], detections[fast_loop_idx])
+                    r = bb_intersection_over_union(detections[slow_loop_idx], detections[fast_loop_idx])
                     if r > cfg.detector.iou_threshold and slow_loop_idx != fast_loop_idx:
                         detections[fast_loop_idx][0] = -1
 

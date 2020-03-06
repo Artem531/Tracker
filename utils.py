@@ -33,7 +33,7 @@ def extract_features(input):
 
 def bb_intersection_over_union(boxA, boxB):
     """
-
+    Calculate iou of boxes
     :param boxA: box of first person [x1,y1,x2,y2]
     :param boxB: box of second person [x1,y1,x2,y2]
     :return: intersection over union value
@@ -141,21 +141,21 @@ def get_dist(p_arr, img_resized, gallary_features):
         i += 1
 
     distmat_arr = np.zeros((len(imgs_query), len(gallary_features)))
-    print("shape", distmat_arr.shape)
+    #print("shape", distmat_arr.shape)
     query_f = []
 
     for i, img_query in enumerate(imgs_query):
         for j, features_img_gallery in enumerate(gallary_features):
             # # Load images
             if type(features_img_gallery) is list:
-                print("features_img_gallery", features_img_gallery)
+                #print("features_img_gallery", features_img_gallery)
                 query_f.append([])
                 distmat_arr[i, j] = 10000
                 continue
             img_query = cv2.resize(img_query, (256, 128))
             img = np.transpose(img_query).astype('f') / 255.
             img = np.expand_dims(img, axis=0)
-            print(np.shape(img))
+            #print(np.shape(img))
             features_img_query = F.normalize(extract_features(torch.from_numpy(img).cuda()), p=2, dim=1).cpu().numpy()[
                 0]
             query_f.append(features_img_query)
@@ -163,32 +163,9 @@ def get_dist(p_arr, img_resized, gallary_features):
             distmat = np.sum((features_img_query[:] - features_img_gallery[:]) ** 2)
             distmat_arr[i, j] = distmat  # / bb_intersection_over_union(p_arr[i], body_bank_bb[j])
 
-    print("dist", distmat_arr)
+    #print("dist", distmat_arr)
 
     return distmat_arr, query_f
-
-
-def iou(box1, box2):
-    """
-    calculate intersection over union
-    """
-    xa = max(box1[1], box2[1])
-    ya = max(box1[0], box2[0])
-    xb = min(box1[3], box2[3])
-    yb = min(box1[2], box2[2])
-
-    interArea = max(0, xb - xa) * max(0, yb - ya)
-
-    box1Area = (box1[2] - box1[0]) * (box1[3] - box1[1])
-    box2Area = (box2[2] - box2[0]) * (box2[3] - box2[1])
-
-    # compute the intersection over union by taking the intersection
-    # area and dividing it by the sum of prediction + ground-truth
-    # areas - the interesection area
-    iou_value = float(interArea) / float(box1Area + box2Area - interArea)
-
-    # return the intersection over union value
-    return iou_value
 
 
 def make_rgb(img):

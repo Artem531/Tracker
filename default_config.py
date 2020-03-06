@@ -10,7 +10,6 @@ def get_default_config():
     cfg.model.load_weights = '/home/qwe/Downloads/osnet_x0_25_market_256x128_amsgrad_ep180_stp80_lr0.003_b128_fb10_softmax_labelsmooth_flip.pth' # path to model weights
     cfg.model.num_classes = 6
     cfg.model.loss = 'softmax'
-    cfg.model.pretrained = True
     cfg.model.threshold = 0.1
 
     # detector
